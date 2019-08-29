@@ -21,6 +21,24 @@ namespace dogbox::regular_file
         return out;
     }
 
+    template <class Unsigned>
+    std::optional<std::tuple<Unsigned, std::byte const *>> decode_big_endian_integer(std::byte const *in,
+                                                                                     std::byte const *end)
+    {
+        size_t const input_size = static_cast<size_t>(std::distance(in, end));
+        if (sizeof(Unsigned) > input_size)
+        {
+            return std::nullopt;
+        }
+        Unsigned result = 0;
+        for (size_t i = 0; i < sizeof(result); ++i, ++in)
+        {
+            result <<= 8u;
+            result |= static_cast<uint64_t>(*in);
+        }
+        return std::tuple<Unsigned, std::byte const *>(result, in);
+    }
+
     template <class ByteOutputIterator>
     ByteOutputIterator start_encoding(length_type const length, ByteOutputIterator out)
     {

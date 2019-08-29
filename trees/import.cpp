@@ -36,9 +36,9 @@ namespace dogbox::import
             {
             case std::filesystem::file_type::regular:
             {
-                blob_hash_code const regular = from_filesystem_regular_file(database, entry_path, parallel);
-                tree::encode_entry(
-                    tree::entry_type::regular_file, entry_name.string(), regular, std::back_inserter(encoded));
+                regular_file_imported const regular = from_filesystem_regular_file(database, entry_path, parallel);
+                tree::encode_entry(tree::entry_type::regular_file, entry_name.string(), regular.hash_code,
+                                   regular.length, std::back_inserter(encoded));
                 break;
             }
 
@@ -46,7 +46,7 @@ namespace dogbox::import
             {
                 blob_hash_code const subdirectory = from_filesystem_directory(database, entry_path, parallel);
                 tree::encode_entry(
-                    tree::entry_type::directory, entry_name.string(), subdirectory, std::back_inserter(encoded));
+                    tree::entry_type::directory, entry_name.string(), subdirectory, 0, std::back_inserter(encoded));
                 break;
             }
 
@@ -99,8 +99,8 @@ namespace dogbox::import
         }
     }
 
-    blob_hash_code from_filesystem_regular_file(sqlite3 &database, std::filesystem::path const &input,
-                                                parallelism const parallel)
+    regular_file_imported from_filesystem_regular_file(sqlite3 &database, std::filesystem::path const &input,
+                                                       parallelism const parallel)
     {
         file_descriptor const file = open_file_for_reading(input).value();
         off_t const size_result = lseek64(file.handle, 0, SEEK_END);
@@ -150,6 +150,6 @@ namespace dogbox::import
         std::vector<std::byte> piece_buffer(remaining_size);
         read_at(file.handle, number_of_pieces * regular_file::piece_length, piece_buffer.data(), piece_buffer.size());
         regular_file::finish_encoding(piece_buffer.data(), remaining_size, std::back_inserter(encoded));
-        return store_blob(database, encoded.data(), encoded.size());
+        return regular_file_imported{store_blob(database, encoded.data(), encoded.size()), size};
     }
 }

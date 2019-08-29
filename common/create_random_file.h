@@ -2,6 +2,7 @@
 
 #include "file_descriptor.h"
 #include <filesystem>
+#include <gsl/span>
 #include <random>
 
 namespace dogbox

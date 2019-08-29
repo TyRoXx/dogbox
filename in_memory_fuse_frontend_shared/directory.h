@@ -5,7 +5,7 @@
 #include <variant>
 #include <vector>
 
-namespace dogbox
+namespace dogbox::in_memory_fuse
 {
     struct regular_file
     {

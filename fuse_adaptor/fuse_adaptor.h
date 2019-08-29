@@ -1,6 +1,7 @@
 #pragma once
 
 #include "blob_layer/blob_storage.h"
+#include "trees/regular_file_index.h"
 #include <filesystem>
 #include <fuse.h>
 #include <sqlite3.h>
@@ -56,16 +57,10 @@ namespace dogbox::fuse
         }
     };
 
-    struct regular_file_index
-    {
-        std::vector<blob_hash_code> pieces;
-        std::vector<std::byte> tail;
-    };
-
     struct open_file
     {
         blob_hash_code hash_code;
-        std::optional<regular_file_index> index;
+        std::optional<tree::regular_file_index> index;
     };
 
     struct user_data

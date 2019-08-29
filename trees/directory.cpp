@@ -11,10 +11,23 @@ namespace dogbox::tree
         {
             return std::nullopt;
         }
+        regular_file::length_type regular_file_size = 0;
         auto const type = static_cast<unsigned char>(*in++);
         switch (type)
         {
         case static_cast<unsigned char>(entry_type::regular_file):
+        {
+            std::optional<std::tuple<regular_file::length_type, std::byte const *>> const length =
+                regular_file::decode_big_endian_integer<regular_file::length_type>(in, end);
+            if (!length)
+            {
+                return std::nullopt;
+            }
+            regular_file_size = std::get<0>(*length);
+            in = std::get<1>(*length);
+            break;
+        }
+
         case static_cast<unsigned char>(entry_type::directory):
             break;
 
@@ -37,6 +50,6 @@ namespace dogbox::tree
         std::copy_n(in, hash_code.digits.size(), hash_code.digits.begin());
         in += hash_code.digits.size();
         return std::tuple<decoded_entry, std::byte const *>(
-            decoded_entry{static_cast<entry_type>(type), name, hash_code}, in);
+            decoded_entry{static_cast<entry_type>(type), name, hash_code, regular_file_size}, in);
     }
 }

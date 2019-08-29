@@ -2,7 +2,7 @@
 #include "common/to_do.h"
 #include <fstream>
 
-namespace dogbox
+namespace dogbox::in_memory_fuse
 {
     std::ostream &operator<<(std::ostream &out, directory const &printed)
     {

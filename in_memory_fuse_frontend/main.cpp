@@ -11,7 +11,7 @@
 #include <iostream>
 #include <mutex>
 
-namespace dogbox
+namespace dogbox::in_memory_fuse
 {
     struct our_fuse_user_data
     {
@@ -220,10 +220,10 @@ int main(int argc, char *argv[])
     }
     std::filesystem::path const input_dir = argv[1];
     struct fuse_operations hello_oper = {};
-    hello_oper.getattr = dogbox::hello_getattr;
-    hello_oper.readdir = dogbox::hello_readdir;
-    hello_oper.open = dogbox::hello_open;
-    hello_oper.read = dogbox::hello_read;
-    dogbox::our_fuse_user_data user_data{input_dir, std::nullopt, {}};
+    hello_oper.getattr = dogbox::in_memory_fuse::hello_getattr;
+    hello_oper.readdir = dogbox::in_memory_fuse::hello_readdir;
+    hello_oper.open = dogbox::in_memory_fuse::hello_open;
+    hello_oper.read = dogbox::in_memory_fuse::hello_read;
+    dogbox::in_memory_fuse::our_fuse_user_data user_data{input_dir, std::nullopt, {}};
     return fuse_main(argc - 1, argv + 1, &hello_oper, &user_data);
 }

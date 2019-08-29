@@ -1,7 +1,7 @@
 #include "fuse_adaptor.h"
 #include "common/to_do.h"
 #include "trees/directory.h"
-#include "trees/regular_file.h"
+#include "trees/read_file.h"
 #include <algorithm>
 #include <cstring>
 
@@ -31,6 +31,7 @@ namespace dogbox::fuse
         {
             tree::entry_type type;
             blob_hash_code hash_code;
+            regular_file::length_type regular_file_size;
         };
 
         std::optional<tree::decoded_entry> find_entry(std::byte const *begin, std::byte const *end,
@@ -61,7 +62,7 @@ namespace dogbox::fuse
             path_split_result const split = split_path(resolving);
             if (split.head.empty())
             {
-                return directory_entry{tree::entry_type::directory, root};
+                return directory_entry{tree::entry_type::directory, root, 0};
             }
             std::optional<std::vector<std::byte>> const root_blob = load_blob(database, root);
             if (!root_blob)
@@ -84,7 +85,7 @@ namespace dogbox::fuse
             case tree::entry_type::regular_file:
                 if (split.tail.empty())
                 {
-                    return directory_entry{tree::entry_type::regular_file, entry.hash_code};
+                    return directory_entry{tree::entry_type::regular_file, entry.hash_code, entry.regular_file_size};
                 }
                 return std::nullopt;
             }
@@ -99,7 +100,7 @@ namespace dogbox::fuse
             case tree::entry_type::regular_file:
                 status.st_mode = S_IFREG | 0444;
                 status.st_nlink = 1;
-                status.st_size = 1234 /*TODO*/;
+                status.st_size = entry.regular_file_size;
                 break;
 
             case tree::entry_type::directory:
@@ -159,7 +160,8 @@ namespace dogbox::fuse
                         TO_DO();
                     }
                     tree::decoded_entry const &entry = std::get<0>(*decode_result);
-                    struct stat const status = directory_entry_to_stat(directory_entry{entry.type, entry.hash_code});
+                    struct stat const status =
+                        directory_entry_to_stat(directory_entry{entry.type, entry.hash_code, entry.regular_file_size});
                     filler(buf, std::string(entry.name).c_str(), &status, 0 /*TODO use offset*/);
                     cursor = std::get<1>(*decode_result);
                 }
@@ -213,44 +215,6 @@ namespace dogbox::fuse
             return 0;
         }
 
-        regular_file_index load_regular_file_index(sqlite3 &database, blob_hash_code const hash_code)
-        {
-            std::optional<std::vector<std::byte>> const loaded = load_blob(database, hash_code);
-            if (!loaded)
-            {
-                TO_DO();
-            }
-            std::byte const *const begin = loaded->data();
-            std::byte const *const end = begin + loaded->size();
-            std::optional<std::tuple<regular_file::length_type, std::byte const *>> const header =
-                regular_file::start_decoding(begin, end);
-            if (!header)
-            {
-                TO_DO();
-            }
-            regular_file::length_type const file_size = std::get<0>(*header);
-            std::vector<blob_hash_code> pieces(file_size / regular_file::piece_length);
-            std::byte const *cursor = std::get<1>(*header);
-            for (size_t i = 0; i < pieces.size(); ++i)
-            {
-                std::optional<std::tuple<sha256_hash_code, std::byte const *>> const piece =
-                    regular_file::decode_piece(cursor, end);
-                if (!piece)
-                {
-                    TO_DO();
-                }
-                pieces.emplace_back(std::get<0>(*piece));
-                cursor = std::get<1>(*piece);
-            }
-            regular_file::length_type const tail_size = (file_size - (pieces.size() * blob_hash_code().digits.size()));
-            std::byte const *const tail = regular_file::finish_decoding(cursor, end, tail_size);
-            if (!tail)
-            {
-                TO_DO();
-            }
-            return regular_file_index{std::move(pieces), std::vector<std::byte>(tail, tail + tail_size)};
-        }
-
         int adaptor_read(const char *request_path, char *const into, size_t const size, off_t const offset,
                          struct fuse_file_info *const file)
         {
@@ -261,44 +225,12 @@ namespace dogbox::fuse
             open_file &opened = *user.files[file->fh];
             if (!opened.index)
             {
-                opened.index = load_regular_file_index(user.database, opened.hash_code);
+                opened.index = tree::load_regular_file_index(user.database, opened.hash_code);
             }
             assert(opened.index);
-            size_t remaining_size = size;
-            regular_file::length_type read_cursor = static_cast<regular_file::length_type>(offset);
-            std::byte *write_cursor = reinterpret_cast<std::byte *>(into);
-            while (remaining_size > 0)
-            {
-                size_t const current_piece_index = (read_cursor / regular_file::piece_length);
-                std::vector<std::byte> *piece = nullptr;
-                std::optional<std::vector<std::byte>> loaded_piece;
-                if (current_piece_index < opened.index->pieces.size())
-                {
-                    loaded_piece = load_blob(user.database, opened.index->pieces[current_piece_index]);
-                    if (!loaded_piece)
-                    {
-                        TO_DO();
-                    }
-                    piece = &*loaded_piece;
-                }
-                else
-                {
-                    assert(opened.index);
-                    piece = &opened.index->tail;
-                }
-                size_t const offset_in_piece = (read_cursor % regular_file::piece_length);
-                if (offset_in_piece >= piece->size())
-                {
-                    break;
-                }
-                size_t const copying = std::min(piece->size(), remaining_size);
-                std::memcpy(write_cursor, piece->data() + offset_in_piece, copying);
-                write_cursor += copying;
-                read_cursor += copying;
-                remaining_size -= copying;
-            }
             // TODO handle overflow
-            return static_cast<int>(std::distance(reinterpret_cast<std::byte *>(into), write_cursor));
+            return static_cast<int>(read_file(
+                *opened.index, user.database, offset, gsl::span<std::byte>(reinterpret_cast<std::byte *>(into), size)));
         }
     }
 

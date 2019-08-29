@@ -8,10 +8,11 @@ namespace
         return std::filesystem::path(__FILE__).parent_path() / "test_directories";
     }
 
-    void test_scan_directory(std::filesystem::path const &relative_path, dogbox::directory const &expected)
+    void test_scan_directory(std::filesystem::path const &relative_path,
+                             dogbox::in_memory_fuse::directory const &expected)
     {
         auto const input = find_test_directories() / relative_path;
-        auto const scanned = dogbox::scan_directory(input);
+        auto const scanned = dogbox::in_memory_fuse::scan_directory(input);
         BOOST_TEST(expected == scanned);
     }
 
@@ -24,14 +25,14 @@ namespace
 
 BOOST_AUTO_TEST_CASE(scan_directory_empty)
 {
-    test_scan_directory("empty", dogbox::directory());
+    test_scan_directory("empty", dogbox::in_memory_fuse::directory());
 }
 
 BOOST_AUTO_TEST_CASE(scan_directory_nested)
 {
-    using dogbox::directory;
-    using dogbox::directory_entry;
-    using dogbox::regular_file;
+    using dogbox::in_memory_fuse::directory;
+    using dogbox::in_memory_fuse::directory_entry;
+    using dogbox::in_memory_fuse::regular_file;
     test_scan_directory(
         "nested",
         directory{

@@ -11,7 +11,7 @@ static void benchmark_scan_directory(benchmark::State &state)
 {
     for (auto _ : state)
     {
-        dogbox::scan_directory(std::filesystem::path(__FILE__).parent_path().parent_path());
+        dogbox::in_memory_fuse::scan_directory(std::filesystem::path(__FILE__).parent_path().parent_path());
     }
 }
 
