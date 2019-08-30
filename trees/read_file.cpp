@@ -12,11 +12,11 @@ namespace dogbox::tree
         size_t remaining_size = into.size();
         regular_file::length_type read_cursor = static_cast<regular_file::length_type>(offset);
         std::byte *write_cursor = into.data();
+        std::vector<std::byte> loaded_piece;
         while (remaining_size > 0)
         {
             size_t const current_piece_index = (read_cursor / regular_file::piece_length);
             std::vector<std::byte> const *piece = nullptr;
-            std::optional<std::vector<std::byte>> loaded_piece;
             if (current_piece_index == file.cached_piece)
             {
                 piece = &file.read_cache;
@@ -27,12 +27,11 @@ namespace dogbox::tree
                     switch (caching)
                     {
                     case read_caching::none:
-                        loaded_piece = load_blob(database, index.pieces[current_piece_index]);
-                        if (!loaded_piece)
+                        if (!load_blob(database, index.pieces[current_piece_index], loaded_piece))
                         {
                             TO_DO();
                         }
-                        return &*loaded_piece;
+                        return &loaded_piece;
 
                     case read_caching::one_piece:
                         if (!load_blob(database, index.pieces[current_piece_index], file.read_cache))
