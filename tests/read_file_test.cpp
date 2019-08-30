@@ -29,8 +29,9 @@ BOOST_DATA_TEST_CASE(read_file, boost::unit_test::data::make<size_t>({dogbox::re
                                                                       4096, dogbox::regular_file::piece_length,
                                                                       dogbox::regular_file::piece_length - 1}) *
                                     boost::unit_test::data::make<size_t>({dogbox::regular_file::piece_length - 1, 4096,
-                                                                          dogbox::regular_file::piece_length}),
-                     file_size, read_size)
+                                                                          dogbox::regular_file::piece_length}) *
+                                    boost::unit_test::data::make(dogbox::tree::all_read_caching_modes),
+                     file_size, read_size, read_caching_mode)
 {
     dogbox::sqlite_handle const database = dogbox::open_sqlite(":memory:");
     dogbox::initialize_blob_storage(*database);
@@ -42,17 +43,18 @@ BOOST_DATA_TEST_CASE(read_file, boost::unit_test::data::make<size_t>({dogbox::re
         dogbox::import::from_filesystem_regular_file(*database, file, dogbox::import::parallelism::full);
     BOOST_TEST(test_hash_code.length == file_content.size());
     BOOST_TEST(dogbox::count_blobs(*database) >= 1);
-    dogbox::tree::regular_file_index const index =
-        dogbox::tree::load_regular_file_index(*database, test_hash_code.hash_code);
+    dogbox::tree::regular_file_index index = dogbox::tree::load_regular_file_index(*database, test_hash_code.hash_code);
     BOOST_REQUIRE(dogbox::tree::file_size(index) == file_size);
+    dogbox::tree::open_file open_file{test_hash_code.hash_code, std::move(index), std::nullopt, {}};
     std::vector<std::byte> read_content(file_size);
     size_t read = 0;
     while (read < file_size)
     {
         size_t const actual_read_size = std::min(file_size - read, read_size);
         BOOST_REQUIRE(actual_read_size ==
-                      dogbox::tree::read_file(
-                          index, *database, read, gsl::span<std::byte>(read_content.data() + read, actual_read_size)));
+                      dogbox::tree::read_file(open_file, *database, read,
+                                              gsl::span<std::byte>(read_content.data() + read, actual_read_size),
+                                              read_caching_mode));
         read += actual_read_size;
     }
     BOOST_TEST(std::equal(read_content.begin(), read_content.end(), file_content.begin(), file_content.end()));

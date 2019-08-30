@@ -193,16 +193,16 @@ namespace dogbox::fuse
         case tree::entry_type::regular_file:
             for (size_t i = 0; i < user.files.size(); ++i)
             {
-                auto &entry = user.files[i];
+                std::optional<tree::open_file> &entry = user.files[i];
                 if (!entry)
                 {
-                    entry = open_file{resolved->hash_code, std::nullopt};
+                    entry = tree::open_file{resolved->hash_code, std::nullopt, std::nullopt, {}};
                     file->fh = i;
                     return 0;
                 }
             }
             file->fh = user.files.size();
-            user.files.emplace_back(open_file{resolved->hash_code, std::nullopt});
+            user.files.emplace_back(tree::open_file{resolved->hash_code, std::nullopt, std::nullopt, {}});
             return 0;
         }
         TO_DO();
@@ -224,14 +224,15 @@ namespace dogbox::fuse
         fuse_context &fuse = *fuse_get_context();
         user_data &user = *static_cast<user_data *>(fuse.private_data);
         assert(file->fh < user.files.size());
-        open_file &opened = *user.files[file->fh];
+        tree::open_file &opened = *user.files[file->fh];
         if (!opened.index)
         {
             opened.index = tree::load_regular_file_index(user.database, opened.hash_code);
         }
         assert(opened.index);
         // TODO handle overflow
-        return static_cast<int>(read_file(
-            *opened.index, user.database, offset, gsl::span<std::byte>(reinterpret_cast<std::byte *>(into), size)));
+        return static_cast<int>(read_file(opened, user.database, offset,
+                                          gsl::span<std::byte>(reinterpret_cast<std::byte *>(into), size),
+                                          user.read_cache_mode));
     }
 }

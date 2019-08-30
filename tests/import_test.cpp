@@ -81,14 +81,15 @@ namespace
 
     std::vector<std::byte> load_regular_file_from_database(sqlite3 &database, dogbox::blob_hash_code const hash_code)
     {
-        dogbox::tree::regular_file_index const index = dogbox::tree::load_regular_file_index(database, hash_code);
+        dogbox::tree::regular_file_index index = dogbox::tree::load_regular_file_index(database, hash_code);
         dogbox::regular_file::length_type const size = dogbox::tree::file_size(index);
         if (size > std::numeric_limits<size_t>::max())
         {
             TO_DO();
         }
         std::vector<std::byte> content(static_cast<size_t>(size));
-        dogbox::tree::read_file(index, database, 0, content);
+        dogbox::tree::open_file open_file{hash_code, std::move(index), std::nullopt, {}};
+        dogbox::tree::read_file(open_file, database, 0, content, dogbox::tree::read_caching::none);
         return content;
     }
 }

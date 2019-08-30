@@ -9,8 +9,8 @@ namespace dogbox::fuse
 {
     struct adaptor
     {
-        explicit adaptor(std::filesystem::path const &mount_point, sqlite3 &database,
-                         dogbox::blob_hash_code const root);
+        explicit adaptor(std::filesystem::path const &mount_point, sqlite3 &database, dogbox::blob_hash_code const root,
+                         dogbox::tree::read_caching const read_cache_mode);
 
         struct fuse &get_fuse_handle() const;
 

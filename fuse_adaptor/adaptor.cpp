@@ -6,8 +6,9 @@ namespace dogbox::fuse
 {
     fuse_args adaptor::no_arguments = {};
 
-    adaptor::adaptor(std::filesystem::path const &mount_point, sqlite3 &database, dogbox::blob_hash_code const root)
-        : user_data{database, root, {}}
+    adaptor::adaptor(std::filesystem::path const &mount_point, sqlite3 &database, dogbox::blob_hash_code const root,
+                     dogbox::tree::read_caching const read_cache_mode)
+        : user_data{database, root, {}, read_cache_mode}
         , fuse_handle()
         , channel(
               [&]() -> fuse_chan & {
