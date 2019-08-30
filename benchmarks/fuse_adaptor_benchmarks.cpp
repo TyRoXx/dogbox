@@ -72,10 +72,10 @@ BENCHMARK(benchmark_fuse_adaptor_none)
     ->Unit(benchmark::kMillisecond)
     ->MeasureProcessCPUTime()
     ->UseRealTime()
-    ->Range(50 * dogbox::regular_file::piece_length, 175 * dogbox::regular_file::piece_length);
+    ->Range(50 * dogbox::regular_file::piece_length, 375 * dogbox::regular_file::piece_length);
 
 BENCHMARK(benchmark_fuse_adaptor_one_piece)
     ->Unit(benchmark::kMillisecond)
     ->MeasureProcessCPUTime()
     ->UseRealTime()
-    ->Range(50 * dogbox::regular_file::piece_length, 175 * dogbox::regular_file::piece_length);
+    ->Range(50 * dogbox::regular_file::piece_length, 375 * dogbox::regular_file::piece_length);

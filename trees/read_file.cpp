@@ -23,19 +23,22 @@ namespace dogbox::tree
             }
             else if (current_piece_index < index.pieces.size())
             {
-                loaded_piece = load_blob(database, index.pieces[current_piece_index]);
-                if (!loaded_piece)
-                {
-                    TO_DO();
-                }
                 piece = [&]() {
                     switch (caching)
                     {
                     case read_caching::none:
+                        loaded_piece = load_blob(database, index.pieces[current_piece_index]);
+                        if (!loaded_piece)
+                        {
+                            TO_DO();
+                        }
                         return &*loaded_piece;
 
                     case read_caching::one_piece:
-                        file.read_cache = std::move(*loaded_piece);
+                        if (!load_blob(database, index.pieces[current_piece_index], file.read_cache))
+                        {
+                            TO_DO();
+                        }
                         file.cached_piece = current_piece_index;
                         return &file.read_cache;
                     }

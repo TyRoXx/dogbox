@@ -42,5 +42,7 @@ namespace dogbox
 
     std::optional<std::vector<std::byte>> load_blob(sqlite3 &database, blob_hash_code const hash_code);
 
+    bool load_blob(sqlite3 &database, blob_hash_code const hash_code, std::vector<std::byte> &content);
+
     uint64_t count_blobs(sqlite3 &database);
 }

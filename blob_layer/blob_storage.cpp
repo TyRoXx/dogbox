@@ -84,6 +84,16 @@ namespace dogbox
 
     std::optional<std::vector<std::byte>> load_blob(sqlite3 &database, blob_hash_code const hash_code)
     {
+        std::vector<std::byte> content;
+        if (load_blob(database, hash_code, content))
+        {
+            return std::move(content);
+        }
+        return std::nullopt;
+    }
+
+    bool load_blob(sqlite3 &database, blob_hash_code const hash_code, std::vector<std::byte> &content)
+    {
         sqlite_statement_handle const statement = prepare(database, "SELECT content FROM `blob` WHERE hash_code=?");
         std::string const hash_code_string = to_string(hash_code);
         handle_sqlite_error(database, sqlite3_bind_text(statement.get(), 1, hash_code_string.c_str(),
@@ -95,13 +105,12 @@ namespace dogbox
         {
             void const *const data = sqlite3_column_blob(statement.get(), 0);
             size_t const size = static_cast<size_t>(sqlite3_column_bytes(statement.get(), 0));
-            std::vector<std::byte> result(
-                static_cast<std::byte const *>(data), static_cast<std::byte const *>(data) + size);
-            return move(result);
+            content.assign(static_cast<std::byte const *>(data), static_cast<std::byte const *>(data) + size);
+            return true;
         }
 
         case SQLITE_DONE:
-            return std::nullopt;
+            return false;
 
         default:
             throw_sqlite_error(database, return_code);
