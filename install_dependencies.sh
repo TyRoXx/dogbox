@@ -10,6 +10,7 @@ BENCHMARK_VERSION=v1.5.0
 SQLITE3_VERSION=3290000
 CMAKE_VERSION=3.15.2
 GSL_VERSION=b576cc6ce375cf42f6537d65a9ef29d67aa6b78e
+LCOV_VERSION=1.14
 
 sudo apt install ninja-build g++ tar git wget clang-format-3.9 cmake libfuse-dev libssl-dev || exit 1
 mkdir -p $DEPENDENCIES_DIR || exit 1
@@ -17,6 +18,15 @@ cd $DEPENDENCIES_DIR || exit 1
 
 INSTALL_PREFIX=`pwd`/install.temp
 rm -rf $INSTALL_PREFIX
+
+# lcov
+if [[ ! -d lcov-$LCOV_VERSION ]]; then
+    wget https://github.com/linux-test-project/lcov/releases/download/v$LCOV_VERSION/lcov-$LCOV_VERSION.tar.gz || exit 1
+    tar zxvf lcov-$LCOV_VERSION.tar.gz || exit 1
+fi
+pushd lcov-$LCOV_VERSION || exit 1
+make -j4 PREFIX=$INSTALL_PREFIX install || exit 1
+popd || exit 1
 
 # Boost
 if [[ ! -d boost_$BOOST_VERSION_UNDERSCORES ]]; then

@@ -2,6 +2,22 @@ cmake_minimum_required(VERSION 3.15)
 project(dogbox LANGUAGES CXX)
 
 set(DEPENDENCIES_INSTALL_DIR ${CMAKE_SOURCE_DIR}/../dogbox_dependencies/install)
+
+option(DOGBOX_WITH_GCOV "compile with gcov support" OFF)
+if(DOGBOX_WITH_GCOV)
+    add_definitions(-coverage)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -coverage")
+    add_custom_target(testcoverage
+        COMMAND
+            find ${CMAKE_CURRENT_BINARY_DIR} -type f -name '*.gcda' -delete &&
+            $<TARGET_FILE:tests> &&
+            ${DEPENDENCIES_INSTALL_DIR}/bin/lcov --capture --no-external --gcov-tool /usr/bin/gcov-8 --directory ${CMAKE_CURRENT_SOURCE_DIR} --directory ${CMAKE_CURRENT_BINARY_DIR} --output-file coverage.info &&
+            ${DEPENDENCIES_INSTALL_DIR}/bin/genhtml coverage.info --output-directory coverage-html &&
+            firefox coverage-html/index.html
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BUILD_DIR})
+    add_dependencies(testcoverage tests)
+endif()
+
 set(CMAKE_PREFIX_PATH ${DEPENDENCIES_INSTALL_DIR})
 
 find_package(SQLite3 REQUIRED)
