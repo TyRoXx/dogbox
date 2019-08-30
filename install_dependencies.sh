@@ -66,7 +66,7 @@ git checkout ${BENCHMARK_VERSION} || exit 1
 popd || exit 1
 mkdir -p benchmark_build || exit 1
 pushd benchmark_build || exit 1
-cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -G "Ninja" -DBENCHMARK_ENABLE_TESTING=OFF ../benchmark || exit 1
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_TESTING=OFF ../benchmark || exit 1
 cmake --build . --target install || exit 1
 popd || exit 1
 
