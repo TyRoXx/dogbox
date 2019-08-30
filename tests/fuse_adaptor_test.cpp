@@ -114,6 +114,11 @@ BOOST_AUTO_TEST_CASE(fuse_adaptor_nested)
     test_fuse_adaptor(find_test_directories() / "nested");
 }
 
+BOOST_AUTO_TEST_CASE(fuse_adaptor_deeply_nested)
+{
+    test_fuse_adaptor(find_test_directories() / "deeply_nested");
+}
+
 BOOST_DATA_TEST_CASE(fuse_adaptor_large,
                      boost::unit_test::data::make({1, 20}) *
                          boost::unit_test::data::make<dogbox::regular_file::length_type>(

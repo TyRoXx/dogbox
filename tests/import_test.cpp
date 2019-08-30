@@ -111,17 +111,45 @@ BOOST_DATA_TEST_CASE(import_from_filesystem_regular_file, boost::unit_test::data
     BOOST_TEST(std::equal(file_content.begin(), file_content.end(), content.begin(), content.end()));
 }
 
-BOOST_DATA_TEST_CASE(import_from_filesystem_directory_small, all_parallelism_modes, parallel)
+namespace
+{
+    struct test_directory
+    {
+        std::string_view name;
+        dogbox::blob_hash_code root;
+        uint64_t blob_count;
+    };
+
+    std::ostream &operator<<(std::ostream &out, test_directory const &printed)
+    {
+        return out << printed.name << " " << printed.root;
+    }
+
+    constexpr test_directory test_directories[] = {
+        test_directory{
+            "empty",
+            dogbox::parse_sha256_hash_code("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855").value(),
+            1},
+        test_directory{
+            "nested",
+            dogbox::parse_sha256_hash_code("5f3379d6a1703a4e70a5fd5fd1b1d4318008ad40e3acdc838393864459e61a6f").value(),
+            6},
+        test_directory{
+            "deeply_nested",
+            dogbox::parse_sha256_hash_code("178b425121332ac974783b01be39cbf7e3f2990662f289fbd8a62db0a5b461c8").value(),
+            28}};
+}
+
+BOOST_DATA_TEST_CASE(import_from_filesystem_directory_small,
+                     boost::unit_test::data::make(test_directories) * all_parallelism_modes, input_directory, parallel)
 {
     dogbox::sqlite_handle const database = dogbox::open_sqlite(":memory:");
     dogbox::initialize_blob_storage(*database);
     BOOST_TEST(dogbox::count_blobs(*database) == 0);
     dogbox::sha256_hash_code const directory_hash_code =
-        dogbox::import::from_filesystem_directory(*database, find_test_directories() / "nested", parallel);
-    BOOST_TEST(
-        dogbox::parse_sha256_hash_code("5f3379d6a1703a4e70a5fd5fd1b1d4318008ad40e3acdc838393864459e61a6f").value() ==
-        directory_hash_code);
-    BOOST_TEST(dogbox::count_blobs(*database) == 6);
+        dogbox::import::from_filesystem_directory(*database, find_test_directories() / input_directory.name, parallel);
+    BOOST_TEST(input_directory.root == directory_hash_code);
+    BOOST_TEST(dogbox::count_blobs(*database) == input_directory.blob_count);
     std::optional<std::vector<std::byte>> const content = dogbox::load_blob(*database, directory_hash_code);
     BOOST_REQUIRE(content);
     // TODO check whether content is correct
