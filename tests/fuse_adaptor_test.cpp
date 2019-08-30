@@ -15,16 +15,6 @@ namespace
         return std::filesystem::path(__FILE__).parent_path() / "test_directories";
     }
 
-    struct fuse_exiter
-    {
-        struct fuse &handle;
-
-        ~fuse_exiter() noexcept
-        {
-            fuse_exit(&handle);
-        }
-    };
-
     void unmount(std::filesystem::path const &mount_point)
     {
         boost::process::ipstream standard_error;
@@ -38,68 +28,69 @@ namespace
         }
     }
 
-    struct auto_unmounter
+    struct fuse_wrapper
     {
-        std::filesystem::path mount_point;
-
-        ~auto_unmounter() noexcept
+        explicit fuse_wrapper(std::filesystem::path const &mount_point, sqlite3 &database,
+                              dogbox::blob_hash_code const root)
+            : user_data{database, root, {}}
+            , fuse_handle()
+            , channel(
+                  [&]() -> fuse_chan & {
+                      fuse_chan *const result = fuse_mount(mount_point.c_str(), &no_arguments);
+                      BOOST_REQUIRE(result);
+                      return *result;
+                  }(),
+                  mount_point)
         {
-            unmount(mount_point);
+            auto &operations = dogbox::fuse::operations;
+            fuse_handle.reset(fuse_new(channel.handle, &no_arguments, &operations, sizeof(operations), &user_data));
+            BOOST_REQUIRE(fuse_handle);
         }
-    };
 
-    void test_fuse_adaptor(std::filesystem::path const &input_directory)
-    {
-        fuse_args arguments = {};
-        std::filesystem::path const mount_point = "/tmp/dogbox_test_fuse_mount";
-        unmount(mount_point);
-        std::filesystem::create_directories(mount_point);
+        fuse &get_fuse_handle() const
+        {
+            return *fuse_handle;
+        }
+
+    private:
+        static fuse_args no_arguments;
 
         // fuse_unmount has to be called before fuse_destroy. That's why the destruction order of these handles is
         // important.
+        dogbox::fuse::user_data user_data;
         std::unique_ptr<struct fuse, dogbox::fuse::fuse_deleter> fuse_handle;
+        dogbox::fuse::channel channel;
+    };
 
-        dogbox::fuse::channel const channel(
-            [&]() -> fuse_chan & {
-                fuse_chan *const result = fuse_mount(mount_point.c_str(), &arguments);
-                BOOST_REQUIRE(result);
-                return *result;
-            }(),
-            mount_point);
+    fuse_args fuse_wrapper::no_arguments = {};
 
+    void test_fuse_adaptor(std::filesystem::path const &input_directory)
+    {
+        std::filesystem::path const mount_point = "/tmp/dogbox_test_fuse_mount";
+        unmount(mount_point);
+        std::filesystem::create_directories(mount_point);
+        dogbox::sqlite_handle const database = dogbox::open_sqlite(":memory:");
+        dogbox::initialize_blob_storage(*database);
+        dogbox::sha256_hash_code const directory_hash_code =
+            dogbox::import::from_filesystem_directory(*database, input_directory, dogbox::import::parallelism::full);
         std::future<void> worker;
         {
-            // for some reason fuse locks up if we don't explicitly unmount
-            auto_unmounter const unmounter{mount_point};
-
-            auto const operations = dogbox::fuse::make_operations();
-            dogbox::sqlite_handle const database = dogbox::open_sqlite(":memory:");
-            dogbox::initialize_blob_storage(*database);
-            dogbox::sha256_hash_code const directory_hash_code = dogbox::import::from_filesystem_directory(
-                *database, input_directory, dogbox::import::parallelism::full);
-            dogbox::fuse::user_data user_data{*database, directory_hash_code, {}};
-            fuse_handle.reset(fuse_new(channel.handle, &arguments, &operations, sizeof(operations), &user_data));
-            BOOST_REQUIRE(fuse_handle);
-
+            fuse_wrapper fuse(mount_point, *database, directory_hash_code);
             worker = std::async(std::launch::async, [&]() {
                 try
                 {
-                    BOOST_REQUIRE(0 == fuse_loop(fuse_handle.get()));
+                    BOOST_REQUIRE(0 == fuse_loop(&fuse.get_fuse_handle()));
                 } catch (...)
                 {
                     std::terminate();
                 }
             });
 
-            {
-                fuse_exiter const exiter{*fuse_handle};
-                int const exit_code = boost::process::system(
-                    boost::process::search_path("diff"), "-r", input_directory.string(), mount_point.string(),
-                    boost::process::std_out > stdout, boost::process::std_err > stderr, boost::process::std_in < stdin);
-                BOOST_REQUIRE(0 == exit_code);
-            }
+            int const exit_code = boost::process::system(
+                boost::process::search_path("diff"), "-r", input_directory.string(), mount_point.string(),
+                boost::process::std_out > stdout, boost::process::std_err > stderr, boost::process::std_in < stdin);
+            BOOST_REQUIRE(0 == exit_code);
         }
-
         worker.get();
     }
 }
