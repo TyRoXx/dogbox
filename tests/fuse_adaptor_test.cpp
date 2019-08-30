@@ -14,6 +14,7 @@ namespace
     {
         return std::filesystem::path(__FILE__).parent_path() / "test_directories";
     }
+
     void test_fuse_adaptor(std::filesystem::path const &input_directory)
     {
         std::filesystem::path const mount_point = "/tmp/dogbox_test_fuse_mount";
