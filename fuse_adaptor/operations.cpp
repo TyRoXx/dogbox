@@ -1,7 +1,8 @@
-#include "fuse_adaptor.h"
+#include "operations.h"
 #include "common/to_do.h"
 #include "trees/directory.h"
 #include "trees/read_file.h"
+#include "user_data.h"
 #include <algorithm>
 #include <cstring>
 

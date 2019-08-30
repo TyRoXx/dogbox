@@ -1,5 +1,5 @@
 #include "common/create_random_directory.h"
-#include "fuse_adaptor/fuse_adaptor.h"
+#include "fuse_adaptor/adaptor.h"
 #include "trees/import.h"
 #include <boost/process/io.hpp>
 #include <boost/process/search_path.hpp>
@@ -14,68 +14,16 @@ namespace
     {
         return std::filesystem::path(__FILE__).parent_path() / "test_directories";
     }
-
-    void unmount(std::filesystem::path const &mount_point)
-    {
-        boost::process::ipstream standard_error;
-        if (boost::process::system(boost::process::search_path("fusermount"), "-zu", mount_point.string(),
-                                   boost::process::std_out > stdout, boost::process::std_err > standard_error,
-                                   boost::process::std_in < stdin) != 0)
-        {
-            std::string output;
-            std::getline(standard_error, output);
-            BOOST_REQUIRE(output == "/bin/fusermount: entry for " + mount_point.string() + " not found in /etc/mtab");
-        }
-    }
-
-    struct fuse_wrapper
-    {
-        explicit fuse_wrapper(std::filesystem::path const &mount_point, sqlite3 &database,
-                              dogbox::blob_hash_code const root)
-            : user_data{database, root, {}}
-            , fuse_handle()
-            , channel(
-                  [&]() -> fuse_chan & {
-                      fuse_chan *const result = fuse_mount(mount_point.c_str(), &no_arguments);
-                      BOOST_REQUIRE(result);
-                      return *result;
-                  }(),
-                  mount_point)
-        {
-            auto &operations = dogbox::fuse::operations;
-            fuse_handle.reset(fuse_new(channel.handle, &no_arguments, &operations, sizeof(operations), &user_data));
-            BOOST_REQUIRE(fuse_handle);
-        }
-
-        fuse &get_fuse_handle() const
-        {
-            return *fuse_handle;
-        }
-
-    private:
-        static fuse_args no_arguments;
-
-        // fuse_unmount has to be called before fuse_destroy. That's why the destruction order of these handles is
-        // important.
-        dogbox::fuse::user_data user_data;
-        std::unique_ptr<struct fuse, dogbox::fuse::fuse_deleter> fuse_handle;
-        dogbox::fuse::channel channel;
-    };
-
-    fuse_args fuse_wrapper::no_arguments = {};
-
     void test_fuse_adaptor(std::filesystem::path const &input_directory)
     {
         std::filesystem::path const mount_point = "/tmp/dogbox_test_fuse_mount";
-        unmount(mount_point);
-        std::filesystem::create_directories(mount_point);
         dogbox::sqlite_handle const database = dogbox::open_sqlite(":memory:");
         dogbox::initialize_blob_storage(*database);
         dogbox::sha256_hash_code const directory_hash_code =
             dogbox::import::from_filesystem_directory(*database, input_directory, dogbox::import::parallelism::full);
         std::future<void> worker;
         {
-            fuse_wrapper fuse(mount_point, *database, directory_hash_code);
+            dogbox::fuse::adaptor fuse(mount_point, *database, directory_hash_code);
             worker = std::async(std::launch::async, [&]() {
                 try
                 {
