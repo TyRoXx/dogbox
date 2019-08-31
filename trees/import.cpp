@@ -38,7 +38,7 @@ namespace dogbox::import
             {
                 regular_file_imported const regular = from_filesystem_regular_file(database, entry_path, parallel);
                 tree::encode_entry(tree::entry_type::regular_file, entry_name.string(), regular.hash_code,
-                                   regular.length, std::back_inserter(encoded));
+                                   regular.content_size, std::back_inserter(encoded));
                 break;
             }
 
@@ -114,7 +114,6 @@ namespace dogbox::import
             TO_DO();
         }
         std::vector<std::byte> encoded;
-        regular_file::start_encoding(size, std::back_inserter(encoded));
         size_t const number_of_pieces = (size / regular_file::piece_length);
         uint64_t const remaining_size = (size - (number_of_pieces * regular_file::piece_length));
         size_t concurrency = std::thread::hardware_concurrency();

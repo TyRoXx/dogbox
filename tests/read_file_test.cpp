@@ -41,11 +41,13 @@ BOOST_DATA_TEST_CASE(read_file, boost::unit_test::data::make<size_t>({dogbox::re
     write_file(file, file_content);
     dogbox::import::regular_file_imported const test_hash_code =
         dogbox::import::from_filesystem_regular_file(*database, file, dogbox::import::parallelism::full);
-    BOOST_TEST(test_hash_code.length == file_content.size());
+    BOOST_TEST(test_hash_code.content_size == file_content.size());
     BOOST_TEST(dogbox::count_blobs(*database) >= 1);
-    dogbox::tree::regular_file_index index = dogbox::tree::load_regular_file_index(*database, test_hash_code.hash_code);
+    dogbox::tree::regular_file_index index =
+        dogbox::tree::load_regular_file_index(*database, test_hash_code.content_size, test_hash_code.hash_code);
     BOOST_REQUIRE(dogbox::tree::file_size(index) == file_size);
-    dogbox::tree::open_file open_file{test_hash_code.hash_code, std::move(index), std::nullopt, {}};
+    dogbox::tree::open_file open_file{
+        test_hash_code.content_size, test_hash_code.hash_code, std::move(index), std::nullopt, {}};
     std::vector<std::byte> read_content(file_size);
     size_t read = 0;
     while (read < file_size)

@@ -196,13 +196,15 @@ namespace dogbox::fuse
                 std::optional<tree::open_file> &entry = user.files[i];
                 if (!entry)
                 {
-                    entry = tree::open_file{resolved->hash_code, std::nullopt, std::nullopt, {}};
+                    entry = tree::open_file{
+                        resolved->regular_file_size, resolved->hash_code, std::nullopt, std::nullopt, {}};
                     file->fh = i;
                     return 0;
                 }
             }
             file->fh = user.files.size();
-            user.files.emplace_back(tree::open_file{resolved->hash_code, std::nullopt, std::nullopt, {}});
+            user.files.emplace_back(
+                tree::open_file{resolved->regular_file_size, resolved->hash_code, std::nullopt, std::nullopt, {}});
             return 0;
         }
         TO_DO();
@@ -227,7 +229,7 @@ namespace dogbox::fuse
         tree::open_file &opened = *user.files[file->fh];
         if (!opened.index)
         {
-            opened.index = tree::load_regular_file_index(user.database, opened.hash_code);
+            opened.index = tree::load_regular_file_index(user.database, opened.file_size, opened.hash_code);
         }
         assert(opened.index);
         // TODO handle overflow

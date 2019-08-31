@@ -20,7 +20,7 @@ namespace dogbox::import
     struct regular_file_imported
     {
         blob_hash_code hash_code;
-        regular_file::length_type length;
+        regular_file::length_type content_size;
     };
 
     regular_file_imported from_filesystem_regular_file(sqlite3 &database, std::filesystem::path const &input,

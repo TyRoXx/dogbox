@@ -3,15 +3,6 @@
 #include <algorithm>
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE(regular_file_start_encoding)
-{
-    std::vector<std::byte> encoded;
-    using namespace dogbox::literals;
-    std::array<std::byte, 8> const expected = {0x12_b, 0x34_b, 0x56_b, 0x78_b, 0xaa_b, 0xbb_b, 0xcc_b, 0xdd_b};
-    dogbox::regular_file::start_encoding(0x12345678aabbccdd, std::back_inserter(encoded));
-    BOOST_TEST(std::equal(expected.begin(), expected.end(), encoded.begin(), encoded.end()));
-}
-
 BOOST_AUTO_TEST_CASE(regular_file_encode_piece)
 {
     std::vector<std::byte> encoded;
@@ -30,26 +21,6 @@ BOOST_AUTO_TEST_CASE(regular_file_finish_encoding)
     std::array<std::byte, 8> const expected = {0x12_b, 0x34_b, 0x56_b, 0x78_b, 0xaa_b, 0xbb_b, 0xcc_b, 0xdd_b};
     dogbox::regular_file::finish_encoding(expected.data(), expected.size(), std::back_inserter(encoded));
     BOOST_TEST(std::equal(expected.begin(), expected.end(), encoded.begin(), encoded.end()));
-}
-
-BOOST_AUTO_TEST_CASE(regular_file_start_decoding_success)
-{
-    using namespace dogbox::literals;
-    std::array<std::byte, 9> const input = {0x12_b, 0x34_b, 0x56_b, 0x78_b, 0xaa_b, 0xbb_b, 0xcc_b, 0xdd_b, 99_b};
-    auto *const end = input.data() + input.size();
-    auto const result = dogbox::regular_file::start_decoding(input.data(), end);
-    BOOST_REQUIRE(result);
-    BOOST_TEST(0x12345678aabbccdd == std::get<0>(*result));
-    BOOST_TEST((input.data() + 8) == std::get<1>(*result));
-}
-
-BOOST_AUTO_TEST_CASE(regular_file_start_decoding_failure)
-{
-    using namespace dogbox::literals;
-    std::array<std::byte, 7> const input = {0x12_b, 0x34_b, 0x56_b, 0x78_b, 0xaa_b, 0xbb_b, 0xcc_b};
-    auto *const end = input.data() + input.size();
-    auto const result = dogbox::regular_file::start_decoding(input.data(), end);
-    BOOST_REQUIRE(!result);
 }
 
 BOOST_AUTO_TEST_CASE(regular_file_decode_piece_success)

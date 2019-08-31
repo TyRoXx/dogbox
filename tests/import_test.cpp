@@ -79,16 +79,19 @@ namespace
         }
     }
 
-    std::vector<std::byte> load_regular_file_from_database(sqlite3 &database, dogbox::blob_hash_code const hash_code)
+    std::vector<std::byte> load_regular_file_from_database(sqlite3 &database,
+                                                           dogbox::regular_file::length_type const content_size,
+                                                           dogbox::blob_hash_code const hash_code)
     {
-        dogbox::tree::regular_file_index index = dogbox::tree::load_regular_file_index(database, hash_code);
+        dogbox::tree::regular_file_index index =
+            dogbox::tree::load_regular_file_index(database, content_size, hash_code);
         dogbox::regular_file::length_type const size = dogbox::tree::file_size(index);
         if (size > std::numeric_limits<size_t>::max())
         {
             TO_DO();
         }
         std::vector<std::byte> content(static_cast<size_t>(size));
-        dogbox::tree::open_file open_file{hash_code, std::move(index), std::nullopt, {}};
+        dogbox::tree::open_file open_file{content_size, hash_code, std::move(index), std::nullopt, {}};
         dogbox::tree::read_file(open_file, database, 0, content, dogbox::tree::read_caching::none);
         return content;
     }
@@ -106,9 +109,10 @@ BOOST_DATA_TEST_CASE(import_from_filesystem_regular_file, boost::unit_test::data
     write_file(file, file_content);
     dogbox::import::regular_file_imported const test_hash_code =
         dogbox::import::from_filesystem_regular_file(*database, file, parallel);
-    BOOST_TEST(test_hash_code.length == file_content.size());
+    BOOST_TEST(test_hash_code.content_size == file_content.size());
     BOOST_TEST(dogbox::count_blobs(*database) >= 1);
-    std::vector<std::byte> const content = load_regular_file_from_database(*database, test_hash_code.hash_code);
+    std::vector<std::byte> const content =
+        load_regular_file_from_database(*database, test_hash_code.content_size, test_hash_code.hash_code);
     BOOST_TEST(std::equal(file_content.begin(), file_content.end(), content.begin(), content.end()));
 }
 
@@ -133,11 +137,11 @@ namespace
             1},
         test_directory{
             "nested",
-            dogbox::parse_sha256_hash_code("5f3379d6a1703a4e70a5fd5fd1b1d4318008ad40e3acdc838393864459e61a6f").value(),
+            dogbox::parse_sha256_hash_code("0bd72663b61480486cdf1a985d4fc5adef06f6ca5e42a748bd70eddb8a87bee9").value(),
             6},
         test_directory{
             "deeply_nested",
-            dogbox::parse_sha256_hash_code("178b425121332ac974783b01be39cbf7e3f2990662f289fbd8a62db0a5b461c8").value(),
+            dogbox::parse_sha256_hash_code("ef247e30dcf4a7aeb0124f600f5b49d69344505ae41855f918a738d63200b465").value(),
             28}};
 }
 

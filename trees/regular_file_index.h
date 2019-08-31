@@ -18,5 +18,6 @@ namespace dogbox::tree
         return size;
     }
 
-    regular_file_index load_regular_file_index(sqlite3 &database, blob_hash_code const hash_code);
+    regular_file_index load_regular_file_index(sqlite3 &database, regular_file::length_type const content_size,
+                                               blob_hash_code const hash_code);
 }

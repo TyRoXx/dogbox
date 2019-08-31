@@ -7,6 +7,7 @@ namespace dogbox::tree
 {
     struct open_file
     {
+        regular_file::length_type file_size;
         blob_hash_code hash_code;
         std::optional<regular_file_index> index;
         std::optional<uint64_t> cached_piece;
