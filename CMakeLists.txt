@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.14)
 project(dogbox LANGUAGES CXX)
 
-set(DEPENDENCIES_INSTALL_DIR ${CMAKE_SOURCE_DIR}/../dogbox_dependencies/install)
+include(vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 option(DOGBOX_WITH_GCOV "compile with gcov support" OFF)
 if(DOGBOX_WITH_GCOV)
@@ -18,15 +18,11 @@ if(DOGBOX_WITH_GCOV)
     add_dependencies(testcoverage tests)
 endif()
 
-set(CMAKE_PREFIX_PATH ${DEPENDENCIES_INSTALL_DIR})
-
 find_package(SQLite3 REQUIRED)
 
-set(BOOST_ROOT ${DEPENDENCIES_INSTALL_DIR})
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS system unit_test_framework filesystem REQUIRED)
 
-set(benchmark_ROOT_DIR ${DEPENDENCIES_INSTALL_DIR})
 find_package(benchmark REQUIRED)
 
 find_library(FUSE_LIB fuse)
