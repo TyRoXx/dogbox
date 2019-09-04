@@ -27,11 +27,11 @@ find_package(Boost COMPONENTS system unit_test_framework filesystem REQUIRED)
 
 find_package(benchmark REQUIRED)
 
-find_library(FUSE_LIB fuse)
+find_library(FUSE_LIB fuse REQUIRED)
 
 find_package(OpenSSL REQUIRED)
 
-find_library(LZ4_LIB lz4)
+find_library(LZ4_LIB lz4 REQUIRED)
 
 add_definitions(
     -Wall
