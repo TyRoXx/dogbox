@@ -6,4 +6,4 @@ pushd vcpkg || exit 1
 export CC=gcc-8
 export CXX=g++-8
 ./bootstrap-vcpkg.sh || exit 1
-./vcpkg install sqlite3 boost-system boost-test boost-outcome boost-filesystem boost-process ms-gsl benchmark || exit 1
+./vcpkg install sqlite3 boost-system boost-test boost-outcome boost-filesystem boost-process ms-gsl benchmark lz4 || exit 1

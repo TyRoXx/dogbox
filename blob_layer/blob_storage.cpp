@@ -1,5 +1,7 @@
 #include "blob_storage.h"
+#include "common/to_do.h"
 #include <cassert>
+#include <lz4.h>
 #include <memory>
 
 namespace dogbox
@@ -48,8 +50,9 @@ namespace dogbox
     void initialize_blob_storage(sqlite3 &database)
     {
         char *error = nullptr;
-        if (sqlite3_exec(&database, "CREATE TABLE `blob` (hash_code, content, PRIMARY KEY(hash_code))", nullptr,
-                         nullptr, &error) == SQLITE_OK)
+        if (sqlite3_exec(&database,
+                         "CREATE TABLE `blob` (hash_code, compressed_content, original_size, PRIMARY KEY(hash_code))",
+                         nullptr, nullptr, &error) == SQLITE_OK)
         {
             return;
         }
@@ -65,12 +68,27 @@ namespace dogbox
         {
             return hash_code;
         }
+
+        if (size > std::numeric_limits<int>::max())
+        {
+            TO_DO();
+        }
+        int const compressed_size_bound = LZ4_compressBound(static_cast<int>(size));
+        assert(compressed_size_bound >= 0);
+        std::unique_ptr<std::byte[]> compressed(new std::byte[static_cast<size_t>(compressed_size_bound)]);
+        int const compressed_size =
+            LZ4_compress_default(reinterpret_cast<char const *>(data), reinterpret_cast<char *>(compressed.get()),
+                                 static_cast<int>(size), compressed_size_bound);
+        assert(compressed_size <= compressed_size_bound);
+
         sqlite_statement_handle const statement =
-            prepare(database, "INSERT INTO `blob` (hash_code, content) VALUES (?, ?)");
+            prepare(database, "INSERT INTO `blob` (hash_code, compressed_content, original_size) VALUES (?, ?, ?)");
         std::string const hash_code_string = to_string(hash_code);
         handle_sqlite_error(database, sqlite3_bind_text(statement.get(), 1, hash_code_string.c_str(),
                                                         static_cast<int>(hash_code_string.size()), nullptr));
-        handle_sqlite_error(database, sqlite3_bind_blob64(statement.get(), 2, data, size, nullptr));
+        handle_sqlite_error(database, sqlite3_bind_blob64(statement.get(), 2, compressed.get(),
+                                                          static_cast<size_t>(compressed_size), nullptr));
+        handle_sqlite_error(database, sqlite3_bind_int64(statement.get(), 3, static_cast<sqlite3_int64>(size)));
         int const return_code = sqlite3_step(statement.get());
         switch (return_code)
         {
@@ -94,7 +112,8 @@ namespace dogbox
 
     bool load_blob(sqlite3 &database, blob_hash_code const hash_code, std::vector<std::byte> &content)
     {
-        sqlite_statement_handle const statement = prepare(database, "SELECT content FROM `blob` WHERE hash_code=?");
+        sqlite_statement_handle const statement =
+            prepare(database, "SELECT compressed_content, original_size FROM `blob` WHERE hash_code=?");
         std::string const hash_code_string = to_string(hash_code);
         handle_sqlite_error(database, sqlite3_bind_text(statement.get(), 1, hash_code_string.c_str(),
                                                         static_cast<int>(hash_code_string.size()), nullptr));
@@ -104,8 +123,23 @@ namespace dogbox
         case SQLITE_ROW:
         {
             void const *const data = sqlite3_column_blob(statement.get(), 0);
-            size_t const size = static_cast<size_t>(sqlite3_column_bytes(statement.get(), 0));
-            content.assign(static_cast<std::byte const *>(data), static_cast<std::byte const *>(data) + size);
+            size_t const compressed_size = static_cast<size_t>(sqlite3_column_bytes(statement.get(), 0));
+            sqlite3_int64 const original_size = sqlite3_column_int64(statement.get(), 1);
+            if (original_size < 0)
+            {
+                TO_DO();
+            }
+            if (original_size > std::numeric_limits<int>::max())
+            {
+                TO_DO();
+            }
+            if (compressed_size > static_cast<size_t>(std::numeric_limits<int>::max()))
+            {
+                TO_DO();
+            }
+            content.resize(static_cast<size_t>(original_size));
+            LZ4_decompress_safe(static_cast<char const *>(data), reinterpret_cast<char *>(content.data()),
+                                static_cast<int>(compressed_size), static_cast<int>(original_size));
             return true;
         }
 

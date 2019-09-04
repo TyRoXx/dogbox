@@ -29,6 +29,8 @@ find_library(FUSE_LIB fuse)
 
 find_package(OpenSSL REQUIRED)
 
+find_library(LZ4_LIB lz4)
+
 add_definitions(
     -Wall
     -Wextra
