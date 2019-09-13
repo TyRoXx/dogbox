@@ -1,6 +1,6 @@
 #include "adaptor.h"
 #include "common/to_do.h"
-#include "unmount.h"
+#include "fuse_adaptor_shared/unmount.h"
 
 namespace dogbox::fuse
 {

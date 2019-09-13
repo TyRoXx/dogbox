@@ -1,7 +1,7 @@
 #pragma once
 
-#include "channel.h"
-#include "deleter.h"
+#include "fuse_adaptor_shared/channel.h"
+#include "fuse_adaptor_shared/deleter.h"
 #include "operations.h"
 #include "user_data.h"
 
