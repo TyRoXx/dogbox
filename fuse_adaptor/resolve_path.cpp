@@ -61,4 +61,23 @@ namespace dogbox
         }
         TO_DO();
     }
+
+    struct stat directory_entry_to_stat(directory_entry const entry)
+    {
+        struct stat status = {};
+        switch (entry.type)
+        {
+        case tree::entry_type::regular_file:
+            status.st_mode = S_IFREG | 0444;
+            status.st_nlink = 1;
+            status.st_size = entry.regular_file_size;
+            break;
+
+        case tree::entry_type::directory:
+            status.st_mode = S_IFDIR | 0755;
+            status.st_nlink = 2;
+            break;
+        }
+        return status;
+    }
 }

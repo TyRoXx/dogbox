@@ -4,6 +4,9 @@
 #include "trees/directory.h"
 #include "trees/regular_file.h"
 #include <filesystem>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace dogbox
 {
@@ -19,4 +22,6 @@ namespace dogbox
 
     std::optional<directory_entry> resolve_path(sqlite3 &database, blob_hash_code const root,
                                                 std::filesystem::path const &resolving);
+
+    struct stat directory_entry_to_stat(directory_entry const entry);
 }
