@@ -1,5 +1,5 @@
 #include "common/create_random_directory.h"
-#include "fuse_adaptor/adaptor.h"
+#include "fuse_read_only_adaptor/adaptor.h"
 #include "trees/import.h"
 #include <boost/process/io.hpp>
 #include <boost/process/search_path.hpp>
@@ -25,7 +25,7 @@ namespace
             dogbox::import::from_filesystem_directory(*database, input_directory, dogbox::import::parallelism::full);
         std::future<void> worker;
         {
-            dogbox::fuse::adaptor fuse(mount_point, *database, directory_hash_code, read_caching_mode);
+            dogbox::fuse::read_only::adaptor fuse(mount_point, *database, directory_hash_code, read_caching_mode);
             worker = std::async(std::launch::async, [&]() {
                 try
                 {
@@ -48,14 +48,15 @@ namespace
     constexpr std::string_view test_directories[] = {"empty", "nested", "deeply_nested"};
 }
 
-BOOST_DATA_TEST_CASE(fuse_adaptor_small, boost::unit_test::data::make(test_directories) *
-                                             boost::unit_test::data::make(dogbox::tree::all_read_caching_modes),
+BOOST_DATA_TEST_CASE(fuse_read_only_adaptor_small,
+                     boost::unit_test::data::make(test_directories) *
+                         boost::unit_test::data::make(dogbox::tree::all_read_caching_modes),
                      input_directory, read_caching_mode)
 {
     test_fuse_adaptor(find_test_directories() / input_directory, read_caching_mode);
 }
 
-BOOST_DATA_TEST_CASE(fuse_adaptor_large,
+BOOST_DATA_TEST_CASE(fuse_read_only_adaptor_large,
                      boost::unit_test::data::make({1, 20}) *
                          boost::unit_test::data::make<dogbox::regular_file::length_type>(
                              {0, dogbox::regular_file::piece_length, dogbox::regular_file::piece_length * 41}) *

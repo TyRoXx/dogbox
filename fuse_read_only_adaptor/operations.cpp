@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace dogbox::fuse
+namespace dogbox::fuse::read_only
 {
     int adaptor_getattr(const char *const request_path, struct stat *const into)
     {

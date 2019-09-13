@@ -6,7 +6,7 @@
 #include <fuse.h>
 #include <sqlite3.h>
 
-namespace dogbox::fuse
+namespace dogbox::fuse::read_only
 {
     int adaptor_getattr(const char *const request_path, struct stat *const into);
 
@@ -31,5 +31,5 @@ namespace dogbox::fuse
         return result;
     }
 
-    constexpr fuse_operations operations = dogbox::fuse::make_operations();
+    constexpr fuse_operations operations = make_operations();
 }

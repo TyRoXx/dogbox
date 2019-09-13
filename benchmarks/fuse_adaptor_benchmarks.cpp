@@ -1,5 +1,5 @@
 #include "common/create_random_directory.h"
-#include "fuse_adaptor/adaptor.h"
+#include "fuse_read_only_adaptor/adaptor.h"
 #include "trees/import.h"
 #include <benchmark/benchmark.h>
 #include <boost/process/io.hpp>
@@ -9,7 +9,7 @@
 
 namespace
 {
-    void benchmark_fuse_adaptor(benchmark::State &state, dogbox::tree::read_caching const read_cache_mode)
+    void benchmark_fuse_read_only_adaptor(benchmark::State &state, dogbox::tree::read_caching const read_cache_mode)
     {
         std::filesystem::path const input_directory = "/tmp/dogbox_random_dir";
         size_t const number_of_files = 1;
@@ -24,7 +24,7 @@ namespace
 
         std::future<void> worker;
         {
-            dogbox::fuse::adaptor fuse(mount_point, *database, directory_hash_code, read_cache_mode);
+            dogbox::fuse::read_only::adaptor fuse(mount_point, *database, directory_hash_code, read_cache_mode);
             worker = std::async(std::launch::async, [&]() {
                 try
                 {
@@ -57,24 +57,24 @@ namespace
         worker.get();
     }
 
-    void benchmark_fuse_adaptor_none(benchmark::State &state)
+    void benchmark_fuse_read_only_adaptor_none(benchmark::State &state)
     {
-        benchmark_fuse_adaptor(state, dogbox::tree::read_caching::none);
+        benchmark_fuse_read_only_adaptor(state, dogbox::tree::read_caching::none);
     }
 
-    void benchmark_fuse_adaptor_one_piece(benchmark::State &state)
+    void benchmark_fuse_read_only_adaptor_one_piece(benchmark::State &state)
     {
-        benchmark_fuse_adaptor(state, dogbox::tree::read_caching::one_piece);
+        benchmark_fuse_read_only_adaptor(state, dogbox::tree::read_caching::one_piece);
     }
 }
 
-BENCHMARK(benchmark_fuse_adaptor_none)
+BENCHMARK(benchmark_fuse_read_only_adaptor_none)
     ->Unit(benchmark::kMillisecond)
     ->MeasureProcessCPUTime()
     ->UseRealTime()
     ->Range(50 * dogbox::regular_file::piece_length, 375 * dogbox::regular_file::piece_length);
 
-BENCHMARK(benchmark_fuse_adaptor_one_piece)
+BENCHMARK(benchmark_fuse_read_only_adaptor_one_piece)
     ->Unit(benchmark::kMillisecond)
     ->MeasureProcessCPUTime()
     ->UseRealTime()

@@ -5,7 +5,7 @@
 #include "operations.h"
 #include "user_data.h"
 
-namespace dogbox::fuse
+namespace dogbox::fuse::read_only
 {
     struct adaptor
     {
@@ -19,7 +19,7 @@ namespace dogbox::fuse
 
         // fuse_unmount has to be called before fuse_destroy. That's why the destruction order of these handles is
         // important.
-        dogbox::fuse::user_data user_data;
+        read_only::user_data user_data;
         std::unique_ptr<struct fuse, dogbox::fuse::fuse_deleter> fuse_handle;
         dogbox::fuse::channel channel;
     };

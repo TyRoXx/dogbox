@@ -4,7 +4,7 @@
 #include "trees/open_file.h"
 #include "trees/read_file.h"
 
-namespace dogbox::fuse
+namespace dogbox::fuse::read_only
 {
     struct user_data
     {
