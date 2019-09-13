@@ -75,7 +75,7 @@ namespace dogbox::fuse
             std::optional<tree::decoded_entry> const found_entry = find_entry(begin, end, split.head.string());
             if (!found_entry)
             {
-                TO_DO();
+                return std::nullopt;
             }
             tree::decoded_entry const &entry = *found_entry;
             switch (entry.type)
