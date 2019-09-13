@@ -2,7 +2,7 @@
 #include "common/to_do.h"
 #include "fuse_adaptor_shared/unmount.h"
 
-namespace dogbox::fuse::read_only
+namespace dogbox::fuse::write
 {
     fuse_args adaptor::no_arguments = {};
 
