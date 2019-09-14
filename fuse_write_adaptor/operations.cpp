@@ -134,4 +134,10 @@ namespace dogbox::fuse::write
                                           gsl::span<std::byte>(reinterpret_cast<std::byte *>(into), size),
                                           user.read_cache_mode));
     }
+
+    int adaptor_unlink(char const *request_path)
+    {
+        (void)request_path;
+        return -ENOTSUP;
+    }
 }

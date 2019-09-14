@@ -20,6 +20,8 @@ namespace dogbox::fuse::write
     int adaptor_read(const char *request_path, char *const into, size_t const size, off_t const offset,
                      struct fuse_file_info *const file);
 
+    int adaptor_unlink(char const *request_path);
+
     constexpr fuse_operations make_operations() noexcept
     {
         fuse_operations result = {};
@@ -28,6 +30,7 @@ namespace dogbox::fuse::write
         result.open = adaptor_open;
         result.release = adaptor_release;
         result.read = adaptor_read;
+        result.unlink = adaptor_unlink;
         return result;
     }
 
