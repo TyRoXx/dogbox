@@ -1,12 +1,15 @@
 #include "common/create_random_file.h"
 #include "common/directory_auto_deleter.h"
 #include "common/to_do.h"
+#if DOGBOX_WITH_FUSE
 #include "in_memory_fuse_frontend_shared/directory.h"
+#endif
 #include "trees/import.h"
 #include <benchmark/benchmark.h>
 #include <fstream>
 #include <random>
 
+#if DOGBOX_WITH_FUSE
 static void benchmark_scan_directory(benchmark::State &state)
 {
     for (auto _ : state)
@@ -16,6 +19,7 @@ static void benchmark_scan_directory(benchmark::State &state)
 }
 
 BENCHMARK(benchmark_scan_directory)->Unit(benchmark::kMillisecond);
+#endif
 
 static void benchmark_store_blob(benchmark::State &state)
 {

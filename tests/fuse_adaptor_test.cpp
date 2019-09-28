@@ -1,3 +1,4 @@
+#if DOGBOX_WITH_FUSE
 #include "common/create_random_directory.h"
 #include "fuse_adaptor/adaptor.h"
 #include "trees/import.h"
@@ -66,3 +67,4 @@ BOOST_DATA_TEST_CASE(fuse_adaptor_large,
     dogbox::create_random_directory(directory, number_of_files, total_size);
     test_fuse_adaptor(directory, read_caching_mode);
 }
+#endif

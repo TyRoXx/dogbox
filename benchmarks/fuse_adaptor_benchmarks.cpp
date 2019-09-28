@@ -1,5 +1,7 @@
 #include "common/create_random_directory.h"
+#if DOGBOX_WITH_FUSE
 #include "fuse_adaptor/adaptor.h"
+#endif
 #include "trees/import.h"
 #include <benchmark/benchmark.h>
 #include <boost/process/io.hpp>
@@ -7,6 +9,7 @@
 #include <boost/process/system.hpp>
 #include <future>
 
+#if DOGBOX_WITH_FUSE
 namespace
 {
     void benchmark_fuse_adaptor(benchmark::State &state, dogbox::tree::read_caching const read_cache_mode)
@@ -79,3 +82,4 @@ BENCHMARK(benchmark_fuse_adaptor_one_piece)
     ->MeasureProcessCPUTime()
     ->UseRealTime()
     ->Range(50 * dogbox::regular_file::piece_length, 375 * dogbox::regular_file::piece_length);
+#endif

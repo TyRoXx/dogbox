@@ -9,6 +9,7 @@ namespace dogbox
 {
     inline void create_randomness(gsl::span<std::byte> const into)
     {
+		#if DOGBOX_HAS_FILE_DESCRIPTOR
         file_descriptor const random = open_file_for_reading("/dev/urandom").value();
         ptrdiff_t written = 0;
         while (written < into.size())
@@ -21,5 +22,8 @@ namespace dogbox
             }
             written += reading;
         }
+		#else
+		TO_DO();
+		#endif
     }
 }

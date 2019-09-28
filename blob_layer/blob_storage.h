@@ -6,6 +6,7 @@
 #include <optional>
 #include <sqlite3.h>
 #include <vector>
+#include <string>
 
 namespace dogbox
 {

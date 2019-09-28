@@ -23,6 +23,10 @@ namespace
 
     enum class regular_file_example
     {
+#ifdef _WIN32
+#undef small
+		#endif
+
         small,
         medium,
         large
@@ -86,7 +90,7 @@ namespace
         dogbox::tree::regular_file_index index =
             dogbox::tree::load_regular_file_index(database, content_size, hash_code);
         dogbox::regular_file::length_type const size = dogbox::tree::file_size(index);
-        if (size > std::numeric_limits<size_t>::max())
+        if (size > (std::numeric_limits<size_t>::max)())
         {
             TO_DO();
         }

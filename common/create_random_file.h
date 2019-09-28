@@ -9,6 +9,7 @@ namespace dogbox
 {
     inline void create_random_file(std::filesystem::path const &file, uint64_t const size)
     {
+#if DOGBOX_HAS_FILE_DESCRIPTOR
         file_descriptor const created = create_file(file).value();
         file_descriptor const random = open_file_for_reading("/dev/urandom").value();
         std::array<std::byte, 0x10000> buffer;
@@ -28,5 +29,8 @@ namespace dogbox
             }
             written += reading;
         }
+		#else
+		TO_DO();
+		#endif
     }
 }

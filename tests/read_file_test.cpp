@@ -52,7 +52,7 @@ BOOST_DATA_TEST_CASE(read_file, boost::unit_test::data::make<size_t>({dogbox::re
     size_t read = 0;
     while (read < file_size)
     {
-        size_t const actual_read_size = std::min(file_size - read, read_size);
+        size_t const actual_read_size = (std::min)(file_size - read, read_size);
         BOOST_REQUIRE(actual_read_size ==
                       dogbox::tree::read_file(open_file, *database, read,
                                               gsl::span<std::byte>(read_content.data() + read, actual_read_size),
