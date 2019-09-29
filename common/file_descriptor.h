@@ -79,8 +79,8 @@ namespace dogbox
 } // namespace dogbox
 #else
 // include Asio before Windows.h to avoid "#error:  WinSock.h has already been included"
-#include <boost/asio/windows/object_handle.hpp>
 #include <Windows.h>
+#include <boost/asio/windows/object_handle.hpp>
 
 namespace dogbox
 {

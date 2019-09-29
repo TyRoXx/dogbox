@@ -5,8 +5,8 @@
 #include <memory>
 #include <optional>
 #include <sqlite3.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace dogbox
 {

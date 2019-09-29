@@ -25,7 +25,7 @@ namespace
     {
 #ifdef _WIN32
 #undef small
-		#endif
+#endif
 
         small,
         medium,
